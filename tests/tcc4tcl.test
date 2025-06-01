@@ -1,0 +1,143 @@
+source [file dirname [info script]]/testing.tcl
+
+needs constraint jim
+needs package tcc
+needs package tcc4tcl
+
+# jim has no info sharedlibextension
+# 
+switch -glob -- $::tcl_platform(os)-$::tcl_platform(pointerSize) {
+    "Linux-*" - "linux-*" {
+        set sharedlibextension .so
+    }
+    "Windows*" - "windows*" - "mingw*" {
+        set sharedlibextension .dll
+    }
+    default {
+        puts "Unknow Plattform $::tcl_platform(os)-$::tcl_platform(pointerSize)"
+        return
+    }
+}
+
+#some demo code for tcc4tcl
+set compile_code {
+    #setup for libtcc with zip enabled driver (ziptcc)
+    set tcc4tcl::dir zip=includes.zip
+    $handle add_include_path .
+#    $handle add_options "-vv"
+    
+    $handle ccode {
+        #include <stdio.h>
+    }
+    
+    $handle cproc testPrintf {Tcl_Interp* interp } char* {
+         return "Hello World!";
+    }
+    
+    $handle ccode {
+        int _fib(int n)
+        {
+            if (n < 2)
+                return n;
+            else
+                return _fib(n-1) + _fib(n-2);
+        }
+    }
+    
+    $handle cproc cfibi {Tcl_Interp* interp int i} int {
+         return _fib(i);
+    }
+    $handle cproc cfibl {Tcl_Interp* interp long i} long {
+         return _fib(i);
+    }
+    $handle cproc cfibw {Tcl_Interp* interp Tcl_WideInt i} Tcl_WideInt {
+         return _fib(i);
+    }
+    
+    $handle cproc ffib {Tcl_Interp* interp float i} float {
+         return (float) _fib(i);
+    }
+    $handle cproc dfib {Tcl_Interp* interp double i} double {
+         return (double) _fib(i);
+    }
+    
+    proc test_tclwrap {text} {
+        # this will test calling tcl procs from c
+        # also test module wide interp
+        
+        puts "test_tclwrap... got text $text"
+        return "test_tclwrap returnstring $text ok"
+    }
+    
+    $handle tclwrap test_tclwrap {char* text} char* test_tclwrap
+    $handle tclwrap test_tclwrap {char* text} void test_tclwrap_void
+    $handle tclwrap test_tclwrap {char* text} int test_tclwrap_int
+    $handle tclwrap test_tclwrap {char* text} string test_tclwrap_string
+    
+    $handle cproc test_tclcall {char* text} ok {
+        char* rv=test_tclwrap(text);
+        printf("char* test returned %s\n",rv);
+    
+        char* rv1=test_tclwrap_string(text);
+        printf("string test returned %s\n",rv1);
+    
+        int rv2=test_tclwrap_int(text);
+        printf("int test returned %s\n",rv2);
+    
+        test_tclwrap_void(text);
+        printf("void test returned nothing\n");
+    
+        return TCL_OK;
+    }
+    
+    # test for arbitrary pointers
+    $handle cproc test_ptr {void* ptr Tcl_Obj* o} Tcl_Obj* {
+        printf("got pointers ptr %p o %p\n",ptr,o);
+        printf("p %s o %s\n",Jim_String(ptr),Jim_String(o));
+        
+        return o;
+    }
+
+}
+
+set test_code {
+    proc test_tclwrap {text} {
+        # this will test calling tcl procs from c
+        # also test module wide interp
+        
+        puts "test_tclwrap... got text $text"
+        return "test_tclwrap returnstring $text ok"
+    }
+    puts [testPrintf]
+    puts "int       cfib 12 = [cfibi 12] = 144"
+    puts "long      cfib 12 = [cfibl 12] = 144"
+    puts "wide      cfib 12 = [cfibw 12] = 144"
+    puts "float     ffib 12 = [ffib 12] = 144.0"
+    puts "double    dfib 12 = [dfib 12] = 144.0"
+    puts "Testing   test_tclcall werwerer"
+    puts [test_tclcall werwerer]
+    puts "testing Tcl_Obj*"
+    puts [test_ptr 123 456]
+    return cfibi 12
+}
+
+
+
+test tcc4tcl-1.1 {check tcc4tcl version} -body {
+	return 1
+} -result {1}
+
+test tcc4tcl-1.2 {check tcc4tcl compile in memory} -body {
+    # compile intern/memory
+    set handle [tcc4tcl::new]
+    eval $compile_code
+    $handle go
+    return ok
+} -result {ok}
+
+test tcc4tcl-1.3 {check tcc4tcl run in memory} -body {
+    #eval $test_code
+    set r [cfibi 12]
+} -result {144}
+
+testreport

@@ -1,6 +1,7 @@
 name: Makefile CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "tcc4tcl" ]
   pull_request:
