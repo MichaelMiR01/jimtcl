@@ -1,0 +1,23 @@
+# shared
+./configure --host=i686-w64-mingw32 --shared --allextmod 
+./configure --host=i686-w64-mingw32 --shared --allextmod LDFLAGS="-L. -ltcc"  CFLAGS="-static-libgcc -s"
+./configure --host=i686-w64-mingw32  --shared LDFLAGS="-L. -ltcc"  CFLAGS="-static-libgcc -s" --full --with-ext="tcc,tcc4tcl"
+./configure --host=i686-w64-mingw32  --shared LDFLAGS="-L. -lztcc_win32 -Wl,-export-all"  CFLAGS="-static-libgcc -s" --full --with-ext="tcc,tcc4tcl"
+
+# static
+./configure --host=i686-w64-mingw32  LDFLAGS="-L. -ltcc"  CFLAGS="-static-libgcc -s" --full
+./configure --host=i686-w64-mingw32  LDFLAGS="-L. -ltcc"  CFLAGS="-static-libgcc -s" --full --with-ext="tcc"
+#full static with libtcc integrated
+./configure --host=i686-w64-mingw32  LDFLAGS="-L. -lztcc_win32" LIBS="-lztcc_win32"  CFLAGS="-static-libgcc -s" --full --with-ext="tcc,tcc4tcl"
+
+# for linux static
+ ./configure --with-ext=tcc "LIBS=-L. -ltcc -Wl,-rpath=."
+# shared lib
+./configure  "LIBS=-Wl,-rpath=. -L. -ltcc" "CFLAGS=-static-libgcc -s -O2" --full --with-ext=tcc,tcc4tcl --shared
+# now make 
+make
+
+### for linux
+./configure  CFLAGS="-s" --full --with-ext="tcc" LIBS="libtcc.a -lpthread" 
+./configure  CFLAGS="-s" --full --with-ext="tcc,tcc4tcl" LIBS="zlibtcc.a -lpthread"
+
