@@ -18,11 +18,12 @@ jobs:
       run: sudo apt install libsqlite3-dev libhiredis-dev
 
     - name: configure
-      run: ./configure --disable-docs  LDFLAGS="-Wl,-rpath=. -L. -ltcc" "CFLAGS= -s -O2"  --with-ext=tcc
+      run: ./configure --maintainer --allextmod --disable-docs  LDFLAGS="-Wl,-rpath=. -L. -ltcc" "CFLAGS= -s -O2"  --with-ext=tcc
 
     - name: Build
       run: make
-
+      
     - name: Run check
       run: make test
+
       
