@@ -1,0 +1,163 @@
+tcc4tcl ported to jim (Feb. 2025)
+
+TODO:
+29.03.2025
+- better manegament of tcc delete, make own instance for each tcc4tcl go and puit int oa namespace variable, so user can decide to delete at will
+- mod jimtcl package to load .so and .dll, depending on system
+- make info sharedlibextension available 
+
+tcc4tcl consists of two files
+
+jim-tcc.c
+this is the basic interface (ported from the venerable tcc_tcl.c) and customized a bit. 
+It wraps the libtcc API into a tcl-style command interface with subcommands
+
+tcc4tcl.tcl
+is basically a code generator. It generates the neccessary code for creating Tcl/Jim commands, 
+wrapping c-code and c-functions or makes tcl procs callable from c-level
+
+and there's 
+jim_compat.c
+A small compat layer need for jim is missing(?)  Jim_GetInt 
+
+For compatibility with TCL there is tclcompat2.tcl
+wich can be sourced e.g. with
+source [file join [file dirname $jim::exe] tclcompat2.tcl]
+and can be integrated into auto.def with
+tclcompat2 { tcl static }       {Tcl compatible2 info shredlibext, package ...}
+
+Links:
+tcc4tcl 
+https://wiki.tcl-lang.org/page/tcc4tcl
+
+Actual version of tcc4tcl (for TCL8.6) 
+https://github.com/MichaelMiR01/tcc4tcl_dev
+
+Zip-tcc for using libtcc with zipped includes
+https://github.com/MichaelMiR01/ziptcc_dev
+
+
+Integration into Jimtcl
+The file auto.def was modified, so it now has two more options.
+--with-ext=tcc,tcc4tcl
+should work
+Since the resulting shell/dll should link against libtcc I used pkg-config to inject it into the LDLIBS
+    tcc      { pkgconfig tcc* check {[define-append LDLIBS {-ltcc -L. -Wl,-rpath=.};set a 1]||true}}
+    tcc4tcl  { dep tcc }
+
+Prerequisites
+libtcc.so/.dll is needed to build and run tcc4tcl
+win32: libjim.dll must be present for the compiler to link against
+libtcc.h to compile against the API
+includes/lib dirs with neccessary system/inludes/library files (rember it IS a compiler)
+jim.h/jim_compat.c/jim-config.h/jim-win32compat.h should be included in the searchpath of tcc to compile against the headers
+
+I built a zip-enabled version of tinycc (https://github.com/MichaelMiR01/ziptcc_dev) which takes it's 
+neccessary includes from a single ZIP. But any actual libtcc (0.9.28 at the time of writing) can do the trick
+You can set the tcc-basedir from tcc4tcl by
+- set ::tcc4tcl::dir (...)
+- $handle add_option -B(...)
+or add it as include-directory
+- $handle add_include_path (...)
+
+
+#######
+#Sample code
+#######
+set ::tcc4tcl::dir zip=includes.zip;# or the basedir of your includes
+set handle [tcc4tcl::new]
+$handle ccode {
+    #include <stdio.h>
+    int _add (int a, int b) {
+        return a+b;
+    }
+}
+$handle cproc add {int a int b int c} int {
+    int v;
+    v=_add(a,b);
+    return v+c;
+}
+puts [$handle code];# show the generated code
+$handle go;# compile
+
+puts "1+2+3=[add 1 2 3] ==6"
+
+######
+A word on deleting an instance of tcc
+This calls tcc_delete on the libtcc API, so all memory allocted by tcc instance will be freed...
+result is that any command defined in the instance is also gone.
+
+A perfect way to crash the shell...
+
+This is why tcc4tcl.tcl only unsets the handle but never deletes an instance of tcc
+usually resulting in memory-"leaks"
+
+######
+jim-tcc.c
+creates a single command tcc4tcl with the following subcommands
+
+ set_options
+ add_include_path
+ add_library_path
+ add_library
+ add_file
+ command
+ compile
+ define
+ undefine
+ add_symbol
+ get_symbol
+ list_symbols
+ 
+ output_file
+
+ delete
+
+######
+tcc4tcl.tcl
+
+create a new handle with tcc4tcl::new
+subcommands of handle 
+
+ ccode
+ cproc
+ ccommand
+ cwrap
+ tclwrap
+ proc
+ 
+ delete
+ linktclcommand
+ 
+ add_options
+ 
+ add_include_path
+ drop_include_path
+ 
+ add_library_path
+ add_library
+ 
+ add_file
+ 
+ add_symbol
+ 
+ process_command_line
+ 
+ code
+ go
+
+######
+jim_compat.c
+#define TCL_OK      JIM_OK
+#define TCL_ERROR   JIM_ERR
+#define TCL_RETURN  JIM_RETURN
+#define TCL_BREAK   JIM_BREAK
+#define TCL_CONTINUE JIM_CONTINUE
+
+#define Tcl_Interp Jim_Interp
+#define ClientData void
+#define Tcl_WideInt jim_wide
+#define Tcl_Obj Jim_Obj
+
+int Jim_GetInt(Jim_Interp *interp, Jim_Obj *objPtr, int *intPtr)
+

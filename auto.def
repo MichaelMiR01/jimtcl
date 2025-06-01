@@ -94,7 +94,10 @@ foreach {mod attrs help} {
     stdlib    { tcl static always } {Built-in commands including lambda, stacktrace and some dict subcommands}
     syslog    {}                    {System logging with syslog}
     tclcompat { tcl static }        {Tcl compatible read, gets, puts, parray, case, ...}
+    tclcompat2 { tcl static }       {Tcl compatible2 info shredlibext, package ...}
     tclprefix { optional }          {Support for the tcl::prefix command}
+    tcc       { off }               {use tinycc as JIT compiler}
+    tcc4tcl   { tcl off }           {tcc4tcl wrapper around tcc}
     tree      { tcl }               {OO tree structure, similar to tcllib ::struct::tree}
     win32     { off }               {Interface to win32}
     zlib      { optional }          {zlib compression interface}
@@ -183,6 +186,8 @@ dict set extdb info {
     redis    { pkg-config hiredis check {[cc-check-function-in-lib redisConnect hiredis]} libdep lib_redisConnect }
     zlib     { pkg-config zlib check {[cc-check-includes zlib.h] && [cc-check-function-in-lib deflate z]} libdep lib_deflate }
     syslog   { check {[have-feature syslog]} }
+    tcc      { pkgconfig tcc* check {[define-append LDLIBS {-ltcc -L. -Wl,-rpath=.};set a 1]||true}}
+    tcc4tcl  { dep tcc }
     tree     { dep oo }
     win32    { check {[have-feature windows]} }
 }

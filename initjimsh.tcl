@@ -26,6 +26,7 @@ proc _jimsh_init {} {
 		}
 	}
 
+catch {source [file join [file dirname $jim::exe] tclcompat2.tcl]}
 	# Add to the standard auto_path
 	lappend p {*}[split [env JIMLIB {}] $tcl_platform(pathSeparator)]
 	if {[exists jim::exe]} {
