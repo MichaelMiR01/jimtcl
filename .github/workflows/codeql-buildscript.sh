@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-./configure
+./configure LDFLAGS="-Wl,-rpath=. -L. -ltcc" "CFLAGS= -s -O2" --full --with-ext=tcc
 make
