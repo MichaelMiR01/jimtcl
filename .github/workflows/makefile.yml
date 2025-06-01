@@ -2,9 +2,9 @@ name: Makefile CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "tcc4tcl" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "tcc4tcl" ]
 
 jobs:
   build:
@@ -18,13 +18,11 @@ jobs:
       run: sudo apt install libsqlite3-dev libhiredis-dev
 
     - name: configure
-      run: ./configure --maintainer --allextmod --disable-docs
+      run: ./configure --disable-docs  LDFLAGS="-Wl,-rpath=. -L. -ltcc" "CFLAGS= -s -O2"  --with-ext=tcc
 
     - name: Build
       run: make
 
     - name: Run check
       run: make test
-
-    - name: Test bootstrap jimsh
-      run: ./test-bootstrap-jim
+      
