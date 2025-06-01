@@ -94,7 +94,6 @@ foreach {mod attrs help} {
     stdlib    { tcl static always } {Built-in commands including lambda, stacktrace and some dict subcommands}
     syslog    {}                    {System logging with syslog}
     tclcompat { tcl static }        {Tcl compatible read, gets, puts, parray, case, ...}
-    tclcompat2 { tcl static }       {Tcl compatible2 info shredlibext, package ...}
     tclprefix { optional }          {Support for the tcl::prefix command}
     tcc       { off }               {use tinycc as JIT compiler}
     tcc4tcl   { tcl off }           {tcc4tcl wrapper around tcc}
