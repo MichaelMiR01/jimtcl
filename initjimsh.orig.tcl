@@ -157,6 +157,3 @@ proc tcl::stdhint {string} {
 }
 
 _jimsh_init
-
-catch {loadLocalRC}
-
